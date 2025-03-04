@@ -3,221 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Continuous Geolocation Tracking with OpenStreetMap & Download Speed Test</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <title>Simple Speed Test</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
+            text-align: center;
+            margin-top: 50px;
         }
-
-        #location {
-            margin-top: 20px;
-        }
-
-        .error {
-            color: red;
-        }
-
-        .location-info {
-            margin-top: 10px;
-            padding: 10px;
-            border: 1px solid #ddd;
+        .button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
             border-radius: 5px;
+            margin-bottom: 20px;
         }
-
-        #tracking-status {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #4CAF50;
-            background-color: #f0f8e1;
-            color: #4CAF50;
-        }
-
-        #map {
-            height: 400px;
+        .result {
             margin-top: 20px;
         }
     </style>
 </head>
 <body>
-
-    <h1>Continuous Geolocation Tracking with OpenStreetMap & Download Speed Test</h1>
-    <p>Click the button below to start tracking your location continuously and testing your download speed:</p>
-
-    <button id="start-tracking-btn">Start Tracking</button>
-    <button id="stop-tracking-btn" style="display: none;">Stop Tracking</button>
-
-    <div id="tracking-status" style="display: none;">
-        <p>Tracking is active. Location will update every time it changes.</p>
-    </div>
-
-    <div id="location" class="location-info" style="display: none;">
-        <h2>Your Location:</h2>
-        <p><strong>Latitude:</strong> <span id="latitude"></span></p>
-        <p><strong>Longitude:</strong> <span id="longitude"></span></p>
-        <p><strong>Download Speed:</strong> <span id="download-speed"></span></p>
-    </div>
-
-    <div id="map"></div>
-
-    <div id="error-message" class="error" style="display: none;"></div>
-
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script>
-        const locationDiv = document.getElementById("location");
-        const latitudeSpan = document.getElementById("latitude");
-        const longitudeSpan = document.getElementById("longitude");
-        const downloadSpeedSpan = document.getElementById("download-speed");
-        const errorMessageDiv = document.getElementById("error-message");
-        const startTrackingButton = document.getElementById("start-tracking-btn");
-        const stopTrackingButton = document.getElementById("stop-tracking-btn");
-        const trackingStatusDiv = document.getElementById("tracking-status");
-        const mapDiv = document.getElementById("map");
-
-        let watchId;
-        let map;
-        let marker;
-
-        // Initialize the map
-        function initMap() {
-            map = L.map('map').setView([0, 0], 13); // Default location set to (0, 0)
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
-        }
-
-        // Function to update location on the map
-        function updateLocation(latitude, longitude) {
-            // Update the map view to the user's current location
-            map.setView([latitude, longitude], 13);
-
-            // Update or add a marker at the new location
-            if (!marker) {
-                marker = L.marker([latitude, longitude]).addTo(map);
-            } else {
-                marker.setLatLng([latitude, longitude]);
-            }
-        }
-
-        // Function to fetch the download speed from the download link
-    function fetchDownloadSpeed(url) {
-    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-    const fullUrl = proxyUrl + url;
+    <h1>Internet Speed Test</h1>
+    <button class="button" onclick="startSpeedTest()">Start Test</button>
     
-    const startTime = Date.now();
-    const fileSizeInBytes = 50 * 1024 * 1024; // Assume the file size (50MB)
+    <div class="result">
+        <p id="downloadSpeed">Download Speed: 0 Mbps</p>
+        <p id="uploadSpeed">Upload Speed: 0 Mbps</p>
+    </div>
 
-    // Perform the download test
-    fetch(fullUrl)
-        .then(response => {
-            if (response.ok) {
-                response.blob().then(blob => {
-                    const endTime = Date.now();
-                    const durationInSeconds = (endTime - startTime) / 1000;
-                    const fileSizeInMb = (blob.size / (1024 * 1024)); // Convert size to MB
-                    const downloadSpeed = fileSizeInMb / durationInSeconds; // Speed in Mbps
+    <script>
+        function startSpeedTest() {
+            const startTime = Date.now();
+            let downloadSize = 5000000; // Size of the file (5MB)
+            let downloadUrl = 'https://www.example.com/largefile.zip'; // URL for testing download speed
 
-                    // Display the download speed
-                    downloadSpeedSpan.textContent = downloadSpeed.toFixed(2) + " Mbps";
-
-                    // Change the marker color based on download speed
-                    if (downloadSpeed < 5) {
-                        marker.setStyle({ color: 'red' });
-                    } else if (downloadSpeed < 15) {
-                        marker.setStyle({ color: 'yellow' });
-                    } else {
-                        marker.setStyle({ color: 'green' });
-                    }
-                });
-            } else {
-                throw new Error('Failed to fetch the file.');
+            // Test download speed
+            let downloadStart = Date.now();
+            let download = new Image();
+            download.onload = function() {
+                let downloadEnd = Date.now();
+                let downloadTime = (downloadEnd - downloadStart) / 1000; // Time in seconds
+                let downloadSpeed = (downloadSize / downloadTime) / 1024 / 1024; // Speed in Mbps
+                document.getElementById('downloadSpeed').textContent = `Download Speed: ${downloadSpeed.toFixed(2)} Mbps`;
             }
-        })
-        .catch(error => {
-            downloadSpeedSpan.textContent = "Failed to retrieve speed.";
-            errorMessageDiv.style.display = "block";
-            errorMessageDiv.textContent = "An error occurred while fetching the speed.";
-            console.error("Error fetching download test:", error);
-        });
-}
+            download.src = `${downloadUrl}?t=${startTime}`; // Adding timestamp to avoid cache
 
+            // Test upload speed using a basic fetch or XMLHttpRequest to upload a small file
+            let uploadData = new FormData();
+            uploadData.append("data", new Blob(["test"], { type: "text/plain" }));
 
-        // Function to handle the location data when successfully retrieved
-        function showLocation(position) {
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-
-            // Update location on the map
-            updateLocation(latitude, longitude);
-
-            // Display the location
-            latitudeSpan.textContent = latitude;
-            longitudeSpan.textContent = longitude;
-
-            locationDiv.style.display = "block";
-            errorMessageDiv.style.display = "none"; // Hide error message if location is fetched
-
-            // Fetch download speed from the link
-            const downloadUrl = 'https://speedtest.singapore.linode.com/1GB-singapore.bin'; // Replace with your download link
-            fetchDownloadSpeed(downloadUrl);
+            let uploadStart = Date.now();
+            fetch('https://www.example.com/upload', {
+                method: 'POST',
+                body: uploadData,
+            })
+            .then(() => {
+                let uploadEnd = Date.now();
+                let uploadTime = (uploadEnd - uploadStart) / 1000; // Time in seconds
+                let uploadSpeed = (uploadData.get('data').size / uploadTime) / 1024 / 1024; // Speed in Mbps
+                document.getElementById('uploadSpeed').textContent = `Upload Speed: ${uploadSpeed.toFixed(2)} Mbps`;
+            })
+            .catch(() => {
+                document.getElementById('uploadSpeed').textContent = 'Upload Speed: Error';
+            });
         }
-
-        // Function to handle errors when retrieving location
-        function handleError(error) {
-            locationDiv.style.display = "none"; // Hide location data if error occurs
-
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    errorMessageDiv.textContent = "You denied the request for your location. Please allow location access in your browser settings.";
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    errorMessageDiv.textContent = "Location information is unavailable. Please make sure your device's location services are enabled.";
-                    break;
-                case error.TIMEOUT:
-                    errorMessageDiv.textContent = "The request to get your location timed out. Please try again.";
-                    break;
-                case error.UNKNOWN_ERROR:
-                    errorMessageDiv.textContent = "An unknown error occurred.";
-                    break;
-            }
-
-            errorMessageDiv.style.display = "block";
-        }
-
-        // Start continuous tracking when the user clicks "Start Tracking"
-        startTrackingButton.addEventListener("click", function() {
-            if ("geolocation" in navigator) {
-                // Start watching the position
-                watchId = navigator.geolocation.watchPosition(showLocation, handleError);
-
-                // Change button visibility
-                startTrackingButton.style.display = "none";
-                stopTrackingButton.style.display = "inline-block";
-                trackingStatusDiv.style.display = "block";
-            } else {
-                errorMessageDiv.textContent = "Geolocation is not supported by this browser.";
-                errorMessageDiv.style.display = "block";
-            }
-        });
-
-        // Stop continuous tracking when the user clicks "Stop Tracking"
-        stopTrackingButton.addEventListener("click", function() {
-            // Stop watching the position
-            if (watchId) {
-                navigator.geolocation.clearWatch(watchId);
-            }
-
-            // Change button visibility
-            startTrackingButton.style.display = "inline-block";
-            stopTrackingButton.style.display = "none";
-            trackingStatusDiv.style.display = "none";
-            locationDiv.style.display = "none"; // Hide location data
-        });
-
-        // Initialize the map when the page loads
-        initMap();
     </script>
-
 </body>
 </html>
