@@ -101,43 +101,47 @@
         }
 
         // Function to fetch the download speed from the download link
-        function fetchDownloadSpeed(url) {
-            const startTime = Date.now();
-            const fileSizeInBytes = 50 * 1024 * 1024; // Assume the file size (50MB)
+    function fetchDownloadSpeed(url) {
+    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+    const fullUrl = proxyUrl + url;
+    
+    const startTime = Date.now();
+    const fileSizeInBytes = 50 * 1024 * 1024; // Assume the file size (50MB)
 
-            // Perform the download test
-            fetch(url)
-                .then(response => {
-                    if (response.ok) {
-                        response.blob().then(blob => {
-                            const endTime = Date.now();
-                            const durationInSeconds = (endTime - startTime) / 1000;
-                            const fileSizeInMb = (blob.size / (1024 * 1024)); // Convert size to MB
-                            const downloadSpeed = fileSizeInMb / durationInSeconds; // Speed in Mbps
+    // Perform the download test
+    fetch(fullUrl)
+        .then(response => {
+            if (response.ok) {
+                response.blob().then(blob => {
+                    const endTime = Date.now();
+                    const durationInSeconds = (endTime - startTime) / 1000;
+                    const fileSizeInMb = (blob.size / (1024 * 1024)); // Convert size to MB
+                    const downloadSpeed = fileSizeInMb / durationInSeconds; // Speed in Mbps
 
-                            // Display the download speed
-                            downloadSpeedSpan.textContent = downloadSpeed.toFixed(2) + " Mbps";
+                    // Display the download speed
+                    downloadSpeedSpan.textContent = downloadSpeed.toFixed(2) + " Mbps";
 
-                            // Change the marker color based on download speed
-                            if (downloadSpeed < 5) {
-                                marker.setStyle({ color: 'red' });
-                            } else if (downloadSpeed < 15) {
-                                marker.setStyle({ color: 'yellow' });
-                            } else {
-                                marker.setStyle({ color: 'green' });
-                            }
-                        });
+                    // Change the marker color based on download speed
+                    if (downloadSpeed < 5) {
+                        marker.setStyle({ color: 'red' });
+                    } else if (downloadSpeed < 15) {
+                        marker.setStyle({ color: 'yellow' });
                     } else {
-                        throw new Error('Failed to fetch the file.');
+                        marker.setStyle({ color: 'green' });
                     }
-                })
-                .catch(error => {
-                    downloadSpeedSpan.textContent = "Failed to retrieve speed.";
-                    errorMessageDiv.style.display = "block";
-                    errorMessageDiv.textContent = "An error occurred while fetching the speed.";
-                    console.error("Error fetching download test:", error);
                 });
-        }
+            } else {
+                throw new Error('Failed to fetch the file.');
+            }
+        })
+        .catch(error => {
+            downloadSpeedSpan.textContent = "Failed to retrieve speed.";
+            errorMessageDiv.style.display = "block";
+            errorMessageDiv.textContent = "An error occurred while fetching the speed.";
+            console.error("Error fetching download test:", error);
+        });
+}
+
 
         // Function to handle the location data when successfully retrieved
         function showLocation(position) {
