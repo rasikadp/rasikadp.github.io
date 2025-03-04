@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Continuous Geolocation and Speed Test</title>
+    <title>Continuous Geolocation with Speed Test and Colored Marker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         body {
@@ -55,8 +55,8 @@
 </head>
 <body>
 
-    <h1>Continuous Geolocation Tracking with OpenStreetMap & Speed Test</h1>
-    <p>Click the button below to start tracking your location continuously and perform an internet speed test:</p>
+    <h1>Continuous Geolocation with Speed Test and Colored Marker</h1>
+    <p>Click the button below to start tracking your location continuously and perform a download speed test:</p>
 
     <button id="start-tracking-btn">Start Tracking</button>
     <button id="stop-tracking-btn" style="display: none;">Stop Tracking</button>
@@ -129,6 +129,9 @@
 
             locationDiv.style.display = "block";
             errorMessageDiv.style.display = "none"; // Hide error message if location is fetched
+
+            // After location is set, perform the speed test
+            startSpeedTest(latitude, longitude);
         }
 
         // Function to handle errors when retrieving location
@@ -184,7 +187,7 @@
         });
 
         // Speed Test Function
-        function startSpeedTest() {
+        function startSpeedTest(lat, lon) {
             downloadSpeedSpan.textContent = "Testing...";
 
             // Using a CORS Proxy to bypass restrictions
@@ -196,6 +199,18 @@
                 .then(data => {
                     const downloadSpeed = data.download / 1e6; // Convert from bps to Mbps
                     downloadSpeedSpan.textContent = downloadSpeed.toFixed(2) + " Mbps";
+
+                    // Change the marker color based on download speed
+                    if (downloadSpeed < 5) {
+                        marker.setIcon(L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1126/1126018.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], tooltipAnchor: [16, -28] }));
+                        marker.setStyle({ color: 'red' });
+                    } else if (downloadSpeed < 15) {
+                        marker.setIcon(L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1126/1126018.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], tooltipAnchor: [16, -28] }));
+                        marker.setStyle({ color: 'yellow' });
+                    } else {
+                        marker.setIcon(L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1126/1126018.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], tooltipAnchor: [16, -28] }));
+                        marker.setStyle({ color: 'green' });
+                    }
                 })
                 .catch(error => {
                     downloadSpeedSpan.textContent = "Failed to retrieve speed.";
@@ -204,9 +219,6 @@
                     console.error("Error fetching speed test:", error);
                 });
         }
-
-        // Add event listener to start the speed test
-        startTrackingButton.addEventListener("click", startSpeedTest);
 
         // Initialize the map when the page loads
         initMap();
