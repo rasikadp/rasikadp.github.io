@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Test with Known URL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        
+        #speed-test {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .result {
+            font-size: 20px;
+            margin-top: 10px;
+            color: #333;
+        }
+
+        .loading {
+            font-size: 18px;
+            color: #007bff;
+        }
+
+        .error {
+            color: red;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Speed Test with Known URL</h1>
+    <p>Click the button below to start the download speed test using a known URL.</p>
+
+    <button id="start-test">Start Speed Test</button>
+
+    <div id="speed-test">
+        <p id="loading" class="loading" style="display: none;">Testing download speed...</p>
+        <p id="download-speed" class="result" style="display: none;"></p>
+        <p id="error-message" class="error" style="display: none;"></p>
+    </div>
+
+    <script>
+        const startTestButton = document.getElementById('start-test');
+        const loadingText = document.getElementById('loading');
+        const downloadSpeedText = document.getElementById('download-speed');
+        const errorMessageText = document.getElementById('error-message');
+
+        // Replace with your known URL for testing download speed
+        const testUrl = 'https://speedtest.singapore.linode.com/1GB-singapore.bin';  // Linode test file URL
+
+        // Function to perform speed test
+        function performSpeedTest(url) {
+            const startTime = Date.now();
+            let downloadSpeed;
+            
+            // Start displaying loading text
+            loadingText.style.display = 'block';
+            errorMessageText.style.display = 'none';
+            downloadSpeedText.style.display = 'none';
+
+            // Perform the fetch to test the download speed
+            fetch(url)
+                .then(response => {
+                    if (response.ok) {
+                        response.blob().then(blob => {
+                            const endTime = Date.now();
+                            const durationInSeconds = (endTime - startTime) / 1000;
+                            const fileSizeInMb = blob.size / (1024 * 1024); // Convert size to MB
+                            downloadSpeed = fileSizeInMb / durationInSeconds; // Speed in Mbps
+                            
+                            // Display the download speed
+                            downloadSpeedText.textContent = `Download Speed: ${downloadSpeed.toFixed(2)} Mbps`;
+                            downloadSpeedText.style.display = 'block';
+                            loadingText.style.display = 'none';
+                        });
+                    } else {
+                        throw new Error('Download failed.');
+                    }
+                })
+                .catch(error => {
+                    errorMessageText.textContent = 'An error occurred while testing the download speed.';
+                    errorMessageText.style.display = 'block';
+                    loadingText.style.display = 'none';
+                    console.error('Error fetching download test:', error);
+                });
+        }
+
+        // Add event listener to the "Start Speed Test" button
+        startTestButton.addEventListener('click', () => {
+            performSpeedTest(testUrl);
+        });
+    </script>
+
+</body>
+</html>
