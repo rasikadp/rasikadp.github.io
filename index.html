@@ -38,6 +38,14 @@
             height: 400px;
             margin-top: 20px;
         }
+
+        #speed {
+            margin-top: 10px;
+        }
+
+        #data-speed {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -56,6 +64,13 @@
         <h2>Your Location:</h2>
         <p><strong>Latitude:</strong> <span id="latitude"></span></p>
         <p><strong>Longitude:</strong> <span id="longitude"></span></p>
+        <p><strong>Speed:</strong> <span id="speed"></span> m/s</p>
+    </div>
+
+    <div id="data-speed">
+        <h2>Internet Speed Test:</h2>
+        <button id="start-speed-test-btn">Start Speed Test</button>
+        <p><strong>Download Speed:</strong> <span id="download-speed">Not tested</span> Mbps</p>
     </div>
 
     <div id="map"></div>
@@ -68,11 +83,14 @@
         const locationDiv = document.getElementById("location");
         const latitudeSpan = document.getElementById("latitude");
         const longitudeSpan = document.getElementById("longitude");
+        const speedSpan = document.getElementById("speed");
+        const downloadSpeedSpan = document.getElementById("download-speed");
         const errorMessageDiv = document.getElementById("error-message");
         const startTrackingButton = document.getElementById("start-tracking-btn");
         const stopTrackingButton = document.getElementById("stop-tracking-btn");
         const trackingStatusDiv = document.getElementById("tracking-status");
         const mapDiv = document.getElementById("map");
+        const startSpeedTestButton = document.getElementById("start-speed-test-btn");
 
         let watchId;
         let map;
@@ -91,6 +109,7 @@
         function showLocation(position) {
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
+            const speed = position.coords.speed || 0; // Speed in m/s (0 if unavailable)
 
             // Update the map view to the user's current location
             map.setView([latitude, longitude], 13);
@@ -102,9 +121,10 @@
                 marker.setLatLng([latitude, longitude]);
             }
 
-            // Display the location
+            // Display the location and speed
             latitudeSpan.textContent = latitude;
             longitudeSpan.textContent = longitude;
+            speedSpan.textContent = speed.toFixed(2);
 
             locationDiv.style.display = "block";
             errorMessageDiv.style.display = "none"; // Hide error message if location is fetched
@@ -161,6 +181,25 @@
             trackingStatusDiv.style.display = "none";
             locationDiv.style.display = "none"; // Hide location data
         });
+
+        // Start speed test using the Fast.com API
+        function startSpeedTest() {
+            downloadSpeedSpan.textContent = "Testing...";
+
+            fetch("https://api.fast.com/netflix/speedtest?https=true")
+                .then(response => response.json())
+                .then(data => {
+                    const downloadSpeed = data.download / 1e6; // Convert from bps to Mbps
+                    downloadSpeedSpan.textContent = downloadSpeed.toFixed(2) + " Mbps";
+                })
+                .catch(error => {
+                    downloadSpeedSpan.textContent = "Failed to retrieve speed.";
+                    console.error("Error fetching speed test:", error);
+                });
+        }
+
+        // Add event listener to start the speed test
+        startSpeedTestButton.addEventListener("click", startSpeedTest);
 
         // Initialize the map when the page loads
         initMap();
