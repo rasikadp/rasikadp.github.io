@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Continuous Geolocation Tracking with OpenStreetMap</title>
+    <title>Continuous Geolocation and Speed Test</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         body {
@@ -39,19 +39,24 @@
             margin-top: 20px;
         }
 
-        #speed {
+        #data-speed {
             margin-top: 10px;
         }
 
-        #data-speed {
-            margin-top: 10px;
+        #download-speed {
+            font-weight: bold;
+            color: green;
+        }
+
+        #error-message {
+            color: red;
         }
     </style>
 </head>
 <body>
 
-    <h1>Continuous Geolocation Tracking with OpenStreetMap</h1>
-    <p>Click the button below to start tracking your location continuously:</p>
+    <h1>Continuous Geolocation Tracking with OpenStreetMap & Speed Test</h1>
+    <p>Click the button below to start tracking your location continuously and perform an internet speed test:</p>
 
     <button id="start-tracking-btn">Start Tracking</button>
     <button id="stop-tracking-btn" style="display: none;">Stop Tracking</button>
@@ -64,37 +69,35 @@
         <h2>Your Location:</h2>
         <p><strong>Latitude:</strong> <span id="latitude"></span></p>
         <p><strong>Longitude:</strong> <span id="longitude"></span></p>
-        <p><strong>Speed:</strong> <span id="speed"></span> m/s</p>
-    </div>
-
-    <div id="data-speed">
-        <h2>Internet Speed Test:</h2>
-        <button id="start-speed-test-btn">Start Speed Test</button>
-        <p><strong>Download Speed:</strong> <span id="download-speed">Not tested</span> Mbps</p>
     </div>
 
     <div id="map"></div>
 
-    <div id="error-message" class="error" style="display: none;"></div>
+    <div id="data-speed">
+        <h2>Download Speed:</h2>
+        <p id="download-speed">Not tested yet</p>
+    </div>
+
+    <div id="error-message" style="display: none;"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // Get references to the DOM elements
+        // Geolocation and Map
         const locationDiv = document.getElementById("location");
         const latitudeSpan = document.getElementById("latitude");
         const longitudeSpan = document.getElementById("longitude");
-        const speedSpan = document.getElementById("speed");
-        const downloadSpeedSpan = document.getElementById("download-speed");
         const errorMessageDiv = document.getElementById("error-message");
         const startTrackingButton = document.getElementById("start-tracking-btn");
         const stopTrackingButton = document.getElementById("stop-tracking-btn");
         const trackingStatusDiv = document.getElementById("tracking-status");
         const mapDiv = document.getElementById("map");
-        const startSpeedTestButton = document.getElementById("start-speed-test-btn");
 
         let watchId;
         let map;
         let marker;
+
+        // Speed Test
+        const downloadSpeedSpan = document.getElementById("download-speed");
 
         // Initialize the map (but don't display it yet)
         function initMap() {
@@ -109,7 +112,6 @@
         function showLocation(position) {
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
-            const speed = position.coords.speed || 0; // Speed in m/s (0 if unavailable)
 
             // Update the map view to the user's current location
             map.setView([latitude, longitude], 13);
@@ -121,10 +123,9 @@
                 marker.setLatLng([latitude, longitude]);
             }
 
-            // Display the location and speed
+            // Display the location
             latitudeSpan.textContent = latitude;
             longitudeSpan.textContent = longitude;
-            speedSpan.textContent = speed.toFixed(2);
 
             locationDiv.style.display = "block";
             errorMessageDiv.style.display = "none"; // Hide error message if location is fetched
@@ -182,11 +183,15 @@
             locationDiv.style.display = "none"; // Hide location data
         });
 
-        // Start speed test using the Fast.com API
+        // Speed Test Function
         function startSpeedTest() {
             downloadSpeedSpan.textContent = "Testing...";
 
-            fetch("https://api.fast.com/netflix/speedtest?https=true")
+            // Using a CORS Proxy to bypass restrictions
+            const proxyUrl = "https://cors-anywhere.herokuapp.com/";
+            const apiUrl = "https://api.fast.com/netflix/speedtest?https=true";
+
+            fetch(proxyUrl + apiUrl)
                 .then(response => response.json())
                 .then(data => {
                     const downloadSpeed = data.download / 1e6; // Convert from bps to Mbps
@@ -194,12 +199,14 @@
                 })
                 .catch(error => {
                     downloadSpeedSpan.textContent = "Failed to retrieve speed.";
+                    errorMessageDiv.style.display = "block";
+                    errorMessageDiv.textContent = "An error occurred. Please try again.";
                     console.error("Error fetching speed test:", error);
                 });
         }
 
         // Add event listener to start the speed test
-        startSpeedTestButton.addEventListener("click", startSpeedTest);
+        startTrackingButton.addEventListener("click", startSpeedTest);
 
         // Initialize the map when the page loads
         initMap();
