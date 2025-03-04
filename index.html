@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Continuous Geolocation with Speed Test and Colored Marker</title>
+    <title>Continuous Geolocation Tracking with OpenStreetMap & Download Speed Test</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         body {
@@ -38,25 +38,12 @@
             height: 400px;
             margin-top: 20px;
         }
-
-        #data-speed {
-            margin-top: 10px;
-        }
-
-        #download-speed {
-            font-weight: bold;
-            color: green;
-        }
-
-        #error-message {
-            color: red;
-        }
     </style>
 </head>
 <body>
 
-    <h1>Continuous Geolocation with Speed Test and Colored Marker</h1>
-    <p>Click the button below to start tracking your location continuously and perform a download speed test:</p>
+    <h1>Continuous Geolocation Tracking with OpenStreetMap & Download Speed Test</h1>
+    <p>Click the button below to start tracking your location continuously and testing your download speed:</p>
 
     <button id="start-tracking-btn">Start Tracking</button>
     <button id="stop-tracking-btn" style="display: none;">Stop Tracking</button>
@@ -69,23 +56,19 @@
         <h2>Your Location:</h2>
         <p><strong>Latitude:</strong> <span id="latitude"></span></p>
         <p><strong>Longitude:</strong> <span id="longitude"></span></p>
+        <p><strong>Download Speed:</strong> <span id="download-speed"></span></p>
     </div>
 
     <div id="map"></div>
 
-    <div id="data-speed">
-        <h2>Download Speed:</h2>
-        <p id="download-speed">Not tested yet</p>
-    </div>
-
-    <div id="error-message" style="display: none;"></div>
+    <div id="error-message" class="error" style="display: none;"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // Geolocation and Map
         const locationDiv = document.getElementById("location");
         const latitudeSpan = document.getElementById("latitude");
         const longitudeSpan = document.getElementById("longitude");
+        const downloadSpeedSpan = document.getElementById("download-speed");
         const errorMessageDiv = document.getElementById("error-message");
         const startTrackingButton = document.getElementById("start-tracking-btn");
         const stopTrackingButton = document.getElementById("stop-tracking-btn");
@@ -96,23 +79,16 @@
         let map;
         let marker;
 
-        // Speed Test
-        const downloadSpeedSpan = document.getElementById("download-speed");
-
-        // Initialize the map (but don't display it yet)
+        // Initialize the map
         function initMap() {
-            map = L.map('map').setView([0, 0], 13); // Set default to 0, 0 (world center)
-
+            map = L.map('map').setView([0, 0], 13); // Default location set to (0, 0)
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
         }
 
-        // Function to handle the location data when successfully retrieved
-        function showLocation(position) {
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-
+        // Function to update location on the map
+        function updateLocation(latitude, longitude) {
             // Update the map view to the user's current location
             map.setView([latitude, longitude], 13);
 
@@ -122,6 +98,54 @@
             } else {
                 marker.setLatLng([latitude, longitude]);
             }
+        }
+
+        // Function to fetch the download speed from the download link
+        function fetchDownloadSpeed(url) {
+            const startTime = Date.now();
+            const fileSizeInBytes = 50 * 1024 * 1024; // Assume the file size (50MB)
+
+            // Perform the download test
+            fetch(url)
+                .then(response => {
+                    if (response.ok) {
+                        response.blob().then(blob => {
+                            const endTime = Date.now();
+                            const durationInSeconds = (endTime - startTime) / 1000;
+                            const fileSizeInMb = (blob.size / (1024 * 1024)); // Convert size to MB
+                            const downloadSpeed = fileSizeInMb / durationInSeconds; // Speed in Mbps
+
+                            // Display the download speed
+                            downloadSpeedSpan.textContent = downloadSpeed.toFixed(2) + " Mbps";
+
+                            // Change the marker color based on download speed
+                            if (downloadSpeed < 5) {
+                                marker.setStyle({ color: 'red' });
+                            } else if (downloadSpeed < 15) {
+                                marker.setStyle({ color: 'yellow' });
+                            } else {
+                                marker.setStyle({ color: 'green' });
+                            }
+                        });
+                    } else {
+                        throw new Error('Failed to fetch the file.');
+                    }
+                })
+                .catch(error => {
+                    downloadSpeedSpan.textContent = "Failed to retrieve speed.";
+                    errorMessageDiv.style.display = "block";
+                    errorMessageDiv.textContent = "An error occurred while fetching the speed.";
+                    console.error("Error fetching download test:", error);
+                });
+        }
+
+        // Function to handle the location data when successfully retrieved
+        function showLocation(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            // Update location on the map
+            updateLocation(latitude, longitude);
 
             // Display the location
             latitudeSpan.textContent = latitude;
@@ -130,8 +154,9 @@
             locationDiv.style.display = "block";
             errorMessageDiv.style.display = "none"; // Hide error message if location is fetched
 
-            // After location is set, perform the speed test
-            startSpeedTest(latitude, longitude);
+            // Fetch download speed from the link
+            const downloadUrl = 'http://172.22.15.54/files/1GB.zip'; // Replace with your download link
+            fetchDownloadSpeed(downloadUrl);
         }
 
         // Function to handle errors when retrieving location
@@ -185,40 +210,6 @@
             trackingStatusDiv.style.display = "none";
             locationDiv.style.display = "none"; // Hide location data
         });
-
-        // Speed Test Function
-        function startSpeedTest(lat, lon) {
-            downloadSpeedSpan.textContent = "Testing...";
-
-            // Using a CORS Proxy to bypass restrictions
-            const proxyUrl = "https://corsproxy.io/";
-            const apiUrl = "https://api.fast.com/netflix/speedtest?https=true";
-
-            fetch(proxyUrl + apiUrl)
-                .then(response => response.json())
-                .then(data => {
-                    const downloadSpeed = data.download / 1e6; // Convert from bps to Mbps
-                    downloadSpeedSpan.textContent = downloadSpeed.toFixed(2) + " Mbps";
-
-                    // Change the marker color based on download speed
-                    if (downloadSpeed < 5) {
-                        marker.setIcon(L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1126/1126018.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], tooltipAnchor: [16, -28] }));
-                        marker.setStyle({ color: 'red' });
-                    } else if (downloadSpeed < 15) {
-                        marker.setIcon(L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1126/1126018.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], tooltipAnchor: [16, -28] }));
-                        marker.setStyle({ color: 'yellow' });
-                    } else {
-                        marker.setIcon(L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1126/1126018.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], tooltipAnchor: [16, -28] }));
-                        marker.setStyle({ color: 'green' });
-                    }
-                })
-                .catch(error => {
-                    downloadSpeedSpan.textContent = "Failed to retrieve speed.";
-                    errorMessageDiv.style.display = "block";
-                    errorMessageDiv.textContent = "An error occurred. Please try again.";
-                    console.error("Error fetching speed test:", error);
-                });
-        }
 
         // Initialize the map when the page loads
         initMap();
