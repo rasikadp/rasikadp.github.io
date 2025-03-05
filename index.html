@@ -35,20 +35,47 @@
 
     <script>
         function startSpeedTest() {
-            const startTime = Date.now();
-            let downloadSize = 5000000; // Size of the file (5MB)
-            let downloadUrl = 'https://speedtest.singapore.linode.com/1GB-singapore.bin'; // URL for testing download speed
+            const downloadUrl = 'https://speedtest.singapore.linode.com/1GB-singapore.bin'; // URL for testing download speed
+            const downloadSize = 5000000; // Approx size of the file (5MB)
 
-            // Test download speed
-            let downloadStart = Date.now();
-            let download = new Image();
-            download.onload = function() {
-                let downloadEnd = Date.now();
-                let downloadTime = (downloadEnd - downloadStart) / 1000; // Time in seconds
-                let downloadSpeed = (downloadSize / downloadTime) / 1024 / 1024; // Speed in Mbps
-                document.getElementById('downloadSpeed').textContent = `Download Speed: ${downloadSpeed.toFixed(2)} Mbps`;
-            }
-            download.src = `${downloadUrl}?t=${startTime}`; // Adding timestamp to avoid cache
+            let startTime = Date.now();
+            let totalBytesDownloaded = 0;
+            let lastTime = startTime;
+            let downloadSpeed = 0;
+            let updateInterval = 1000; // Update speed every 1 second
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', downloadUrl, true);
+            xhr.responseType = 'arraybuffer';
+
+            // On progress event
+            xhr.onprogress = function(event) {
+                if (event.lengthComputable) {
+                    totalBytesDownloaded = event.loaded;
+                    let currentTime = Date.now();
+                    let elapsedTime = (currentTime - lastTime) / 1000; // Time in seconds
+
+                    if (elapsedTime > 0) {
+                        downloadSpeed = (totalBytesDownloaded / elapsedTime) / 1024 / 1024; // Speed in Mbps
+                        document.getElementById('downloadSpeed').textContent = `Download Speed: ${downloadSpeed.toFixed(2)} Mbps`;
+                    }
+                }
+            };
+
+            xhr.onloadstart = function() {
+                lastTime = Date.now();
+                totalBytesDownloaded = 0;
+                document.getElementById('downloadSpeed').textContent = 'Download Speed: 0 Mbps';
+            };
+
+            xhr.onload = function() {
+                let endTime = Date.now();
+                let totalTime = (endTime - startTime) / 1000; // Time in seconds
+                let finalSpeed = (totalBytesDownloaded / totalTime) / 1024 / 1024; // Speed in Mbps
+                document.getElementById('downloadSpeed').textContent = `Download Speed: ${finalSpeed.toFixed(2)} Mbps`;
+            };
+
+            xhr.send();
         }
     </script>
 </body>
