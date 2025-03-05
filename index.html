@@ -31,7 +31,6 @@
     
     <div class="result">
         <p id="downloadSpeed">Download Speed: 0 Mbps</p>
-        <p id="uploadSpeed">Upload Speed: 0 Mbps</p>
     </div>
 
     <script>
@@ -50,8 +49,6 @@
                 document.getElementById('downloadSpeed').textContent = `Download Speed: ${downloadSpeed.toFixed(2)} Mbps`;
             }
             download.src = `${downloadUrl}?t=${startTime}`; // Adding timestamp to avoid cache
-
-           
         }
     </script>
 </body>
