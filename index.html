@@ -51,24 +51,7 @@
             }
             download.src = `${downloadUrl}?t=${startTime}`; // Adding timestamp to avoid cache
 
-            // Test upload speed using a basic fetch or XMLHttpRequest to upload a small file
-            let uploadData = new FormData();
-            uploadData.append("data", new Blob(["test"], { type: "text/plain" }));
-
-            let uploadStart = Date.now();
-            fetch('', {
-                method: 'POST',
-                body: uploadData,
-            })
-            .then(() => {
-                let uploadEnd = Date.now();
-                let uploadTime = (uploadEnd - uploadStart) / 1000; // Time in seconds
-                let uploadSpeed = (uploadData.get('data').size / uploadTime) / 1024 / 1024; // Speed in Mbps
-                document.getElementById('uploadSpeed').textContent = `Upload Speed: ${uploadSpeed.toFixed(2)} Mbps`;
-            })
-            .catch(() => {
-                document.getElementById('uploadSpeed').textContent = 'Upload Speed: Error';
-            });
+           
         }
     </script>
 </body>
